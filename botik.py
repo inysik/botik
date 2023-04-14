@@ -8,9 +8,10 @@ import telebot
 # bot = telebot.TeleBot("YOUR_TOKEN_HERE")
 
 # Игровое поле для крестиков-ноликов, заполненное пробелами
-board = [[' ', ' ', ' '],
-         [' ', ' ', ' '],
-         [' ', ' ', ' ']]
+# board = [[' ', ' ', ' '],
+#          [' ', ' ', ' '],
+#          [' ', ' ', ' ']]
+
 
 # Символы для игроков
 player_symbols = {'X': '❌', 'O': '⭕️'}
@@ -79,6 +80,24 @@ def reset_game():
              [' ', ' ', ' '],
              [' ', ' ', ' ']]
     current_player = 'X'
+
+# Функция для отображения игрового поля в чате
+def show_board():
+    global board
+    # Символы для границ и разделителей
+    top = '╔═══╦═══╦═══╗'
+    mid = '╠═══╬═══╬═══╣'
+    bot = '╚═══╩═══╩═══╝'
+    div = '║'
+
+    # Собираем отображение игрового поля
+    row1 = f'{div} {board[0][0]} {div} {board[0][1]} {div} {board[0][2]} {div}'
+    row2 = f'{div} {board[1][0]} {div} {board[1][1]} {div} {board[1][2]} {div}'
+    row3 = f'{div} {board[2][0]} {div} {board[2][1]} {div} {board[2][2]} {div}'
+
+    # Отправляем игровое поле в чат
+    bot.send_message(chat_id, f'{top}\n{row1}\n{mid}\n{row2}\n{mid}\n{row3}\n{bot}')
+     bot.send_message(chat_id, game_board, parse_mode='Markdown')
 
 # Запускаем бота
 bot.polling()
