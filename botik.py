@@ -1,78 +1,85 @@
 import telebot
-import random
+# import random
 
 bot = telebot.TeleBot('5994897500:AAGIxzrN_x3Rs0NIyaLnJ1JJCFDMblYTPf0')
+import telebot
 
-# создание пустого поля для игры в крестики-нолики
-board = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+# Создаем экземпляр класса TeleBot с токеном нашего бота
+# bot = telebot.TeleBot("YOUR_TOKEN_HERE")
 
-# определение текущего игрока (1 - крестики, 2 - нолики)
-current_player = 1
+# Игровое поле для крестиков-ноликов, заполненное пробелами
+board = [[' ', ' ', ' '],
+         [' ', ' ', ' '],
+         [' ', ' ', ' ']]
 
-# функция, которая проверяет, есть ли победитель
-def check_winner():
-    # проверка по горизонтали
+# Символы для игроков
+player_symbols = {'X': '❌', 'O': '⭕️'}
+
+# Текущий символ игрока (X или O)
+current_player = 'X'
+
+# Функция для отрисовки игрового поля в виде строки
+def draw_board():
+    board_str = ''
+    for row in board:
+        for cell in row:
+            board_str += f'{cell}|'
+        board_str = board_str[:-1] + '\n'
+    return board_str
+
+# Функция для проверки, является ли данное состояние игры победным
+def is_winner(board, player):
+    # Проверяем горизонтали и вертикали
     for i in range(3):
-        if board[i][0] == board[i][1] == board[i][2] != 0:
-            return board[i][0]
+        if board[i] == [player] * 3 or [row[i] for row in board] == [player] * 3:
+            return True
+    # Проверяем диагонали
+    if [board[i][i] for i in range(3)] == [player] * 3 or [board[i][2-i] for i in range(3)] == [player] * 3:
+        return True
+    return False
 
-    # проверка по вертикали
-    for i in range(3):
-        if board[0][i] == board[1][i] == board[2][i] != 0:
-            return board[0][i]
+# Обработчик команды /start
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, "Добро пожаловать в игру крестики-нолики! Чтобы сделать ход, отправьте сообщение с координатами клетки, куда вы хотите поставить свой символ, например, '1,2'.")
 
-    # проверка по диагонали
-    if board[0][0] == board[1][1] == board[2][2] != 0:
-        return board[0][0]
-
-    if board[2][0] == board[1][1] == board[0][2] != 0:
-        return board[2][0]
-
-    # если победитель не найден, возвращает 0
-    return 0
-
-# функция, которая выводит текущее состояние поля
-def print_board():
-    for i in range(3):
-        for j in range(3):
-            if board[i][j] == 0:
-                print("-", end="")
-            elif board[i][j] == 1:
-                print("X", end="")
-            else:
-                print("O", end="")
-        print()
-
-# функция, которая обрабатывает сообщение от пользователя
+# Обработчик любых текстовых сообщений, которые не являются командами
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     global current_player
+    # Пытаемся получить координаты от пользователя
+    try:
+        x, y = map(int, message.text.split(','))
+        # Проверяем, что клетка пуста
+        if board[x-1][y-1] == ' ':
+            board[x-1][y-1] = current_player
+            bot.reply_to(message, f'{player_symbols[current_player]}\n{draw_board()}')
+            # Проверяем, есть ли победитель или ничья
+            if is_winner(board, current_player):
+                bot.reply_to(message, f'Игрок {player_symbols[current_player]} победил!')
+                # Сбрасываем игру
+                reset_game()
+            elif ' ' not in [cell for row in board for cell in row]:
+                bot.reply_to(message, 'Ничья!')
+                # Сб
+            else:
+                # Передаем ход следующему игроку
+                current_player = 'O' if current_player == 'X' else 'X'
+                bot.reply_to(message, f'Ход игрока {player_symbols[current_player]}')
+        else:
+            bot.reply_to(message, 'Эта клетка уже занята!')
+    # Если не удалось получить координаты от пользователя, сообщаем об ошибке
+    except:
+        bot.reply_to(message, 'Некорректный формат ввода. Отправьте сообщение с координатами клетки, куда вы хотите поставить свой символ, например, "1,2".')
 
-    # получение координат, на которые пользователь хочет поставить свой символ
-    coords = message.text.split(",")
-    x = int(coords[0])
-    y = int(coords[1])
+# Функция для сброса игры
+def reset_game():
+    global board, current_player
+    board = [[' ', ' ', ' '],
+             [' ', ' ', ' '],
+             [' ', ' ', ' ']]
+    current_player = 'X'
 
-    # проверка, что координаты находятся в пределах поля
-    if x < 0 or x > 2 or y < 0 or y > 2:
-        bot.reply_to(message, "Координаты должны быть от 0 до 2")
-        return
+# Запускаем бота
+bot.polling()
 
-    # проверка, что поле свободно
-    if board[x][y] != 0:
-        bot.reply_to(message, "Эта клетка уже занята")
-        return
-
-    # установка символа на поле
-    board[x][y] = current_player
-
-    # вывод текущего состояния поля
-    print_board()
-
-    # проверка наличия победителя
-    winner = check_winner()
-    if winner != 0:
-        bot.reply_to(message, f"Победил игрок {winner}!")
-        return
-
-    # проверка, что на поле остались свободные
