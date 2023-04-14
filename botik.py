@@ -97,7 +97,7 @@ def show_board():
 
     # Отправляем игровое поле в чат
     bot.send_message(chat_id, f'{top}\n{row1}\n{mid}\n{row2}\n{mid}\n{row3}\n{bot}')
-     bot.send_message(chat_id, game_board, parse_mode='Markdown')
+    bot.send_message(chat_id, game_board, parse_mode='Markdown')
 
 # Запускаем бота
 bot.polling()
